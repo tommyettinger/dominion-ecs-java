@@ -33,11 +33,10 @@ public final class ClassIndex implements AutoCloseable {
     private final boolean fallbackMapEnabled;
     private final AtomicInteger atomicIndex = new AtomicInteger(0);
     private final int capacity;
-    private int index = 1;
     private final ClassValue<Integer> fallbackMap = new ClassValue<>() {
         @Override
         protected Integer computeValue(Class<?> type) {
-            return index++;
+            return atomicIndex.incrementAndGet();
         }
     };
 
@@ -145,7 +144,7 @@ public final class ClassIndex implements AutoCloseable {
     @SuppressWarnings("ForLoopReplaceableByForEach")
     public IndexKey getIndexKey(Object[] objects) {
         int length = objects.length;
-        boolean[] checkArray = new boolean[index + length + 1];
+        boolean[] checkArray = new boolean[atomicIndex.get() + length + 1];
         int min = Integer.MAX_VALUE, max = 0;
         for (int i = 0; i < length; i++) {
             int value = getIndexOrAddClass(objects[i].getClass());
@@ -162,7 +161,7 @@ public final class ClassIndex implements AutoCloseable {
     @SuppressWarnings("ForLoopReplaceableByForEach")
     public IndexKey getIndexKeyByType(Class<?>[] classes) {
         int length = classes.length;
-        boolean[] checkArray = new boolean[index + length + 1];
+        boolean[] checkArray = new boolean[atomicIndex.get() + length + 1];
         int min = Integer.MAX_VALUE, max = 0;
         for (int i = 0; i < length; i++) {
             int value = getIndexOrAddClass(classes[i]);
@@ -187,9 +186,7 @@ public final class ClassIndex implements AutoCloseable {
     }
 
     public int size() {
-        return fallbackMapEnabled ?
-                index - 1 :
-                atomicIndex.get();
+        return atomicIndex.get();
     }
 
     public void useUseFallbackMap() {
